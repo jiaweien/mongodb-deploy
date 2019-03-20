@@ -11,6 +11,7 @@ import datetime
 
 mongod_host = ['189.1.1.72','189.1.1.24','189.1.1.20']
 mongos_host = ['189.1.1.72']
+key_file="/root/.ssh/id_rsa"
 root_pswd="123456"
 mongo_work_home="/smart/mongodb"
 mongos_port="27050"
@@ -25,7 +26,13 @@ def mk_dir_for_mongo():
     for h in mongod_host:
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect(h , port=22 , username='root' , password=root_pswd)
+        if len(key_file) > 0:
+            ssh.connect(h , port=22 , username='root' , key_filename=key_file)
+        elif len(root_pswd) > 0:
+            ssh.connect(h , port=22 , username='root' , password=root_pswd)
+        else:
+            print("both key_filename and password is null!")
+            exit(1)
         exec_cmd = ("[ -d %s ] || mkdir -p %s;" %(mongo_work_home , mongo_work_home))
         exec_cmd = exec_cmd + ("cd %s;mkdir -p mongos/log;mkdir -p mongos/conf;mkdir -p mongos/data;" %(mongo_work_home))
         exec_cmd = exec_cmd + ("cd %s;mkdir -p config/log;mkdir -p config/conf;mkdir -p config/data;" %(mongo_work_home))
@@ -46,7 +53,13 @@ def clean_up_mongo():
     for h in mongod_host:
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect(h , port=22 , username='root' , password=root_pswd)
+        if len(key_file) > 0:
+            ssh.connect(h , port=22 , username='root' , key_filename=key_file)
+        elif len(root_pswd) > 0:
+            ssh.connect(h , port=22 , username='root' , password=root_pswd)
+        else:
+            print("both key_filename and password is null!")
+            exit(1)
         exec_cmd = ('killall -9 mongod;killall -9 mongos')
         print(exec_cmd)
         stdin,stdout,stderr = ssh.exec_command(exec_cmd)
@@ -67,7 +80,13 @@ def dep_mongod_config():
         i = n
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect(h , port=22 , username='root' , password=root_pswd)
+        if len(key_file) > 0:
+            ssh.connect(h , port=22 , username='root' , key_filename=key_file)
+        elif len(root_pswd) > 0:
+            ssh.connect(h , port=22 , username='root' , password=root_pswd)
+        else:
+            print("both key_filename and password is null!")
+            exit(1)
         exec_cmd = ('killall -9 mongod')
         print(exec_cmd)
         stdin,stdout,stderr = ssh.exec_command(exec_cmd)
@@ -115,7 +134,13 @@ def dep_mongod_config():
 def init_config_mongod():
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh.connect(mongod_host[0] , port=22 , username='root' , password=root_pswd)
+    if len(key_file) > 0:
+        ssh.connect(mongod_host[0] , port=22 , username='root' , key_filename=key_file)
+    elif len(root_pswd) > 0:
+        ssh.connect(mongod_host[0] , port=22 , username='root' , password=root_pswd)
+    else:
+        print("both key_filename and password is null!")
+        exit(1)
 
     exec_cmd_list = []
     exec_cmd_list.append("mongo --port %s --quiet --eval \"config={_id:'%s',configsvr:true,members:[{_id:0,host:'%s:%s',priority:4},{_id:1,host:'%s:%s', priority:3},{_id:2,host:'%s:%s', priority:2}]};rs.initiate(config)\"" %(config_port , config_repl_nm , mongod_host[0] , config_port , mongod_host[1] , config_port , mongod_host[2] , config_port))
@@ -140,7 +165,13 @@ def init_shard_mongod():
 
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect(h , port=22 , username='root' , password=root_pswd)
+        if len(key_file) > 0:
+            ssh.connect(h , port=22 , username='root' , key_filename=key_file)
+        elif len(root_pswd) > 0:
+            ssh.connect(h , port=22 , username='root' , password=root_pswd)
+        else:
+            print("both key_filename and password is null!")
+            exit(1)
 
         s = m + 1
         s = (0 if (s>=3) else s)
@@ -172,7 +203,13 @@ def dep_mongos():
 
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect(h , port=22 , username='root' , password=root_pswd)
+        if len(key_file) > 0:
+            ssh.connect(h , port=22 , username='root' , key_filename=key_file)
+        elif len(root_pswd) > 0:
+            ssh.connect(h , port=22 , username='root' , password=root_pswd)
+        else:
+            print("both key_filename and password is null!")
+            exit(1)
 
         exec_cmd_list = []
         exec_cmd_list.append("mongos --configdb %s/%s:%s,%s:%s,%s:%s --port %s --fork --logpath /smart/mongodb/mongos/mongos.log" %(config_repl_nm , mongod_host[m] , config_port , mongod_host[s] , config_port , mongod_host[a] , config_port , mongos_port))
@@ -196,7 +233,13 @@ def init_mongos():
 
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh.connect(mongod_host[m] , port=22 , username='root' , password=root_pswd)
+    if len(key_file) > 0:
+        ssh.connect(mongod_host[m] , port=22 , username='root' , key_filename=key_file)
+    elif len(root_pswd) > 0:
+        ssh.connect(mongod_host[m] , port=22 , username='root' , password=root_pswd)
+    else:
+        print("both key_filename and password is null!")
+        exit(1)
 
     repl_nm_1 = ("shard_repl_%d" %(m))
     repl_nm_2 = ("shard_repl_%d" %(s))
@@ -226,4 +269,3 @@ init_shard_mongod()
 time.sleep(1)
 dep_mongos()
 init_mongos()
-
